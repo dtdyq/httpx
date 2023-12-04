@@ -1,8 +1,8 @@
 package org.dyq.httpx.route;
 
 import lombok.extern.slf4j.Slf4j;
-import org.dyq.httpx.resp.impl.StaticFile;
 import org.dyq.httpx.resp.Response;
+import org.dyq.httpx.resp.impl.StaticFile;
 import org.dyq.httpx.resp.impl.Stream;
 import org.dyq.httpx.xh.Context;
 import org.dyq.httpx.xh.Handler;
@@ -22,8 +22,6 @@ final class StaticHandler implements Handler {
     private final String path;
     private final Map<String, Path> enablePathMap = new HashMap<>();
 
-    private boolean jarRes = false;
-
     public StaticHandler(String prefix, String path) {
         this.prefix = prefix;
         this.path = path;
@@ -33,13 +31,11 @@ final class StaticHandler implements Handler {
     private void setup() {
         Path p = Paths.get(path);
         if (Files.exists(p)) {
-            if (path.startsWith("/") || p.isAbsolute()) {
-                jarRes = true;
-            } else {
+            if (!path.startsWith("/") && !p.isAbsolute()) {
                 //普通文件系统
                 if (Files.isDirectory(p)) {
-                    try {
-                        Files.walk(p).forEach(new Consumer<Path>() {
+                    try (var s = Files.walk(p)) {
+                        s.forEach(new Consumer<Path>() {
                             @Override
                             public void accept(Path path) {
                                 if (Files.isRegularFile(path)) {
@@ -56,10 +52,8 @@ final class StaticHandler implements Handler {
 
                 }
             }
-        } else {
-            jarRes = true;
         }
-        log.info("static server path:{}", enablePathMap);
+        log.info("static server path:{}", path);
     }
 
     private static String normalize(Path path) {
@@ -90,8 +84,5 @@ final class StaticHandler implements Handler {
                 return context.next();
             }
         }
-    }
-
-    public static void main(String[] args) {
     }
 }

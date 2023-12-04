@@ -1,5 +1,6 @@
 package org.dyq.httpx.core;
 
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.dyq.httpx.core.stream.PeakInputStream;
 import org.dyq.httpx.resp.Response;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
+import java.util.logging.Level;
 
 @Slf4j
 public class Session implements Runnable {
@@ -50,7 +51,7 @@ public class Session implements Runnable {
                     bos.write(ee.data);
                 }
                 // 这个阶段出现错误，就直接关闭这个session吧 ,头都没读完
-                log.error("header parse and proc error.", e);
+                log.info( "header parse and proc error.", e);
                 tcpSocket.close();
                 return;
             }

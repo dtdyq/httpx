@@ -28,7 +28,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>org.dyq.httpx.xh.TestSvr</mainClass>
+                  <mainClass>com.dtdyq.TestSvr</mainClass>
                 </transformer>
               </transformers>
               <artifactSet>

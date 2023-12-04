@@ -14,12 +14,6 @@ package org.dyq.httpx.core;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * We do our own mapping since support for mime mapping in Java is platform dependent
- * and doesn't seem to work very well
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
- */
 public class MimeMapping {
     private static final Map<String, String> m = new HashMap<>();
 

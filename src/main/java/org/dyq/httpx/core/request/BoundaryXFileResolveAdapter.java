@@ -16,9 +16,9 @@ import java.util.Map;
  * 和父类不同的是，它处理文件使用用户定制的MpFileResolver，而不是父类内置的resolver实现
  */
 public class BoundaryXFileResolveAdapter extends FormDataResolver {
-    private final MpFileResolver resolver;
+    private final MultipartFileResolver resolver;
 
-    public BoundaryXFileResolveAdapter(Session session, MpFileResolver resolver) {
+    public BoundaryXFileResolveAdapter(Session session, MultipartFileResolver resolver) {
         super(session);
         this.resolver = resolver;
     }
@@ -30,13 +30,12 @@ public class BoundaryXFileResolveAdapter extends FormDataResolver {
             return;
         }
         if (isFile) {
-            ParsedHeader ps = HeaderUtil.USE_FIRST.parse(HeaderNames.CONTENT_DISPOSITION, rawHeader.get(HeaderNames.CONTENT_DISPOSITION));
             String ctt = HeaderValues.APPLICATION_OCTET_STREAM;
             if (rawHeader.containsKey(HeaderNames.CONTENT_TYPE)) {
                 ParsedHeader ct = HeaderUtil.USE_FIRST.parse(HeaderNames.CONTENT_TYPE, rawHeader.get(HeaderNames.CONTENT_TYPE));
                 ctt = ct.value(0);
             }
-            MpFileResolver.FileInfo fileInfo = new MpFileResolver.FileInfo(filename, ctt, currentCharset);
+            MultipartFileResolver.FileInfo fileInfo = new MultipartFileResolver.FileInfo(filename, ctt, currentCharset);
             resolver.start(fileInfo);
         }
     }
@@ -47,7 +46,7 @@ public class BoundaryXFileResolveAdapter extends FormDataResolver {
             if (isFile) {
                 resolver.incoming(b);
             } else {
-                tmp.write(b.data(),b.pos(),b.available());
+                tmp.write(b.data(), b.pos(), b.available());
             }
         }
     }

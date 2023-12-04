@@ -1,8 +1,7 @@
 package org.dyq.httpx.xh;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.dyq.httpx.core.Session;
-import org.dyq.httpx.core.request.MpFileResolver;
+import org.dyq.httpx.core.request.MultipartFileResolver;
 import org.dyq.httpx.resp.Response;
 import org.dyq.httpx.route.util.CharArray;
 
@@ -83,16 +82,12 @@ public class Context {
         return session.request().formStrMap();
     }
 
-    public <T> T json(TypeReference<T> tr) {
-        return session.request().json(tr);
-    }
-
 
     public Throwable exception() {
         return session.exception();
     }
 
-    public void resolveFile(MpFileResolver resolver) throws Throwable {
+    public void resolveFile(MultipartFileResolver resolver) throws Throwable {
         session.request().fileResolve(resolver);
     }
 }

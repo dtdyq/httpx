@@ -15,7 +15,7 @@ import java.nio.file.StandardOpenOption;
 /**
  * 系统自带resolver，将所有文件报错到用户提供的目录,没有会尝试创建
  */
-public class ToDirFileResolver implements MpFileResolver {
+public class ToDirFileResolver implements MultipartFileResolver {
     private final Path dir;
 
     private FileInfo currentInfo;

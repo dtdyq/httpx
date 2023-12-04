@@ -10,7 +10,7 @@ import java.nio.charset.Charset;
  * 反复调用incoming传输这个文件的数据
  * 最后调用finish表示当前文件结束
  */
-public interface MpFileResolver {
+public interface MultipartFileResolver {
     record FileInfo(String filename, String contentType, Charset charset) {
     }
 
@@ -20,7 +20,7 @@ public interface MpFileResolver {
 
     void finish() throws Throwable;
 
-    public static MpFileResolver toDir(String dir) {
+    static MultipartFileResolver toDir(String dir) {
         return new ToDirFileResolver(dir);
     }
 }

@@ -110,9 +110,9 @@ public class FormDataResolver implements BoundaryConsumer {
                     tmpOs = new BufferedOutputStream(Files.newOutputStream(tmpFile, StandardOpenOption.WRITE));
                     tmp.writeTo(tmpOs);
                 }
-                tmpOs.write(b.data(),b.pos(),b.available());
+                tmpOs.write(b.data(), b.pos(), b.available());
             } else {
-                tmp.write(b.data(),b.pos(),b.available());
+                tmp.write(b.data(), b.pos(), b.available());
             }
         }
     }

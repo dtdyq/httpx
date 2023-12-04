@@ -1,7 +1,5 @@
 package org.dyq.httpx.core;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +10,7 @@ import org.dyq.httpx.core.header.HeaderParser;
 import org.dyq.httpx.core.header.HeaderUtil;
 import org.dyq.httpx.core.request.BoundaryXFileResolveAdapter;
 import org.dyq.httpx.core.request.FormDataResolver;
-import org.dyq.httpx.core.request.MpFileResolver;
+import org.dyq.httpx.core.request.MultipartFileResolver;
 import org.dyq.httpx.core.stream.ChunkedInputStream;
 import org.dyq.httpx.core.stream.PeakInputStream;
 import org.dyq.httpx.exception.FormParseException;
@@ -21,7 +19,6 @@ import org.dyq.httpx.util.HeaderNames;
 import org.dyq.httpx.util.HeaderValues;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -33,7 +30,6 @@ import java.util.function.BiConsumer;
 @ToString
 @Slf4j
 public class Request {
-    private static final ObjectMapper mapper = new ObjectMapper();
     private final Session session;
     @Getter
     @Setter
@@ -149,23 +145,6 @@ public class Request {
         return raw.copyToArray();
     }
 
-    public <T> T json(TypeReference<T> tr) {
-        ParsedHeader ps = parseHeader(HeaderNames.CONTENT_TYPE, HeaderUtil.USE_FIRST);
-        if (ps != null && !Objects.equals(ps.value(0), HeaderValues.APPLICATION_JSON)) {
-            //不是json类型,就给个告警吧，尽量都尝试json反序列化
-            log.warn("require json but content type not match:{}", ps.value(0));
-        }
-        byte[] bytes = body();
-        if (bytes.length == 0) {
-            return null;
-        }
-        try {
-            return mapper.readValue(bytes, tr);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private boolean formParsed = false;
 
     private final Map<String, String> generalFormDataMap = new HashMap<>();
@@ -192,43 +171,44 @@ public class Request {
         }
         Charset charset = Charset.forName(ps.param().getOrDefault(HeaderValues.CHARSET, "utf-8"));
         formParsed = true;
-        if (size == 0) { // 没有body体
-            return;
-        } else if (size == -1) { // chunked
-            if (Objects.equals(ps.value(0), HeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)) {
-                if (bodyReadFinish) {
-                    parseUrlEncodedFormedData(ps, charset, raw);
-                } else {
-                    var cis = new ChunkedInputStream(session.rawIs());
-                    ByteSlice bs;
-                    ByteSlice total = ByteSlice.of(1024);
-                    while ((bs = cis.readSkipChunk()) != ByteSlice.EMPTY) {
-                        total.merge(bs);
+        if (size != 0) {
+            if (size == -1) { // chunked
+                if (Objects.equals(ps.value(0), HeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)) {
+                    if (bodyReadFinish) {
+                        parseUrlEncodedFormedData(ps, charset, raw);
+                    } else {
+                        var cis = new ChunkedInputStream(session.rawIs());
+                        ByteSlice bs;
+                        ByteSlice total = ByteSlice.of(1024);
+                        while ((bs = cis.readSkipChunk()) != ByteSlice.EMPTY) {
+                            total.merge(bs);
+                        }
+                        parseUrlEncodedFormedData(ps, charset, total);
                     }
-                    parseUrlEncodedFormedData(ps, charset, total);
-                }
-            } else {
-                ChunkedInputStream cis;
-                if (bodyReadFinish) {
-                    cis = new ChunkedInputStream(new PeakInputStream(raw));
                 } else {
-                    cis = new ChunkedInputStream(session.rawIs());
+                    ChunkedInputStream cis;
+                    if (bodyReadFinish) {
+                        cis = new ChunkedInputStream(new PeakInputStream(raw));
+                    } else {
+                        cis = new ChunkedInputStream(session.rawIs());
+                    }
+                    parseMultipartFormData(charset, cis, null);
+                    generalFormDataMap.putAll(formResolver.getFormMap());
                 }
-                parseMultipartFormData(charset, cis, null);
-                generalFormDataMap.putAll(formResolver.getFormMap());
-            }
-        } else { //fixLength
-            if (Objects.equals(ps.value(0), HeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)) {
-                if (size > Integer.MAX_VALUE) {
-                    throw new FormParseException("content too large to bind");
+            } else { //fixLength
+                if (Objects.equals(ps.value(0), HeaderValues.APPLICATION_X_WWW_FORM_URLENCODED)) {
+                    if (size > Integer.MAX_VALUE) {
+                        throw new FormParseException("content too large to bind");
+                    }
+                    ByteSlice bs = bodyReadFinish ? raw : session.rawIs().readN((int) size);
+                    parseUrlEncodedFormedData(ps, charset, bs);
+                } else {
+                    parseMultipartFormData(charset, null, bodyReadFinish ? new PeakInputStream(raw) : session.rawIs());
+                    generalFormDataMap.putAll(formResolver.getFormMap());
                 }
-                ByteSlice bs = bodyReadFinish ? raw : session.rawIs().readN((int) size);
-                parseUrlEncodedFormedData(ps, charset, bs);
-            } else {
-                parseMultipartFormData(charset, null, bodyReadFinish ? new PeakInputStream(raw) : session.rawIs());
-                generalFormDataMap.putAll(formResolver.getFormMap());
             }
-        }
+        }  // 没有body体
+
     }
 
     private void parseMultipartFormData(Charset charset, ChunkedInputStream cis, PeakInputStream pis) throws Throwable {
@@ -437,7 +417,7 @@ public class Request {
      * @param resolver r
      * @throws Throwable t
      */
-    public void fileResolve(MpFileResolver resolver) throws Throwable {
+    public void fileResolve(MultipartFileResolver resolver) throws Throwable {
         ParsedHeader ps = parseHeader(HeaderNames.CONTENT_TYPE, HeaderUtil.USE_FIRST);
         if (ps == null || !Objects.equals(ps.value(0), HeaderValues.MULTIPART_FORM_DATA)) {
             log.warn("try file resolve mismatch content type:{}", ps == null ? "null" : ps.value(0));
