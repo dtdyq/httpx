@@ -4,7 +4,6 @@ import org.dyq.httpx.core.Context;
 import org.dyq.httpx.core.CustomException;
 import org.dyq.httpx.core.Handler;
 import org.dyq.httpx.core.HttpX;
-import org.dyq.httpx.core.request.MultipartFileResolver;
 import org.dyq.httpx.resp.Response;
 import org.dyq.httpx.resp.impl.Except;
 import org.dyq.httpx.resp.impl.Json;
@@ -19,12 +18,11 @@ public class Main {
                 .post("/up", new Handler() {
                     @Override
                     public Response handle(Context ctx) throws Throwable {
-                        ctx.resolveFiles(MultipartFileResolver.toDir("./upload"));
                         System.out.println(ctx.forms());
                         return Json.ok(new Data(12, "aaa"));
                     }
-                }).start()
-                .dir("/", "./")
+                })
+                .dir("/", "/")
                 .except(CustomException.class, new Handler() {
                     @Override
                     public Response handle(Context ctx) throws Throwable {
