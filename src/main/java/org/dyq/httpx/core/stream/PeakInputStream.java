@@ -1,8 +1,8 @@
 package org.dyq.httpx.core.stream;
 
+import org.dyq.httpx.config.Config;
 import org.dyq.httpx.core.ByteSlice;
 import org.dyq.httpx.exception.SocketReadException;
-import org.dyq.httpx.util.Config;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,7 @@ import java.io.InputStream;
 public class PeakInputStream {
     private ByteSlice src;
     private InputStream is;
-    private final ByteSlice bs = new ByteSlice().data(new byte[Config.RECEIVE_BUFFER_SIZE.getInt()]);
+    private final ByteSlice bs = new ByteSlice().data(new byte[Config.curr().buffer().getReceive()]);
 
     PeakInputStream(InputStream is) {
         this.is = is;

@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.dyq.httpx.core.Session;
 import org.dyq.httpx.exception.DirInvalidException;
 import org.dyq.httpx.util.Pair;
-import org.dyq.httpx.xh.Handler;
+import org.dyq.httpx.core.Handler;
 
 import java.util.ArrayList;
 import java.util.HashMap;

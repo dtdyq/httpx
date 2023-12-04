@@ -1,8 +1,8 @@
 package org.dyq.httpx.core.request;
 
+import org.dyq.httpx.config.Config;
 import org.dyq.httpx.core.ByteSlice;
 import org.dyq.httpx.exception.FormParseException;
-import org.dyq.httpx.util.Config;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class ToDirFileResolver implements MultipartFileResolver {
         currentInfo = fileInfo;
         String fn = fileInfo.filename();
         Path fp = dir.resolve(fn);
-        this.currOs = new BufferedOutputStream(Files.newOutputStream(fp, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE), Config.RECEIVE_BUFFER_SIZE.getInt());
+        this.currOs = new BufferedOutputStream(Files.newOutputStream(fp, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE), Config.curr().buffer().getRespSize());
     }
 
     @Override

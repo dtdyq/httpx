@@ -1,6 +1,6 @@
-package org.dyq.httpx.xh;
+package org.dyq.httpx.core;
 
-import org.dyq.httpx.core.HttpSvr;
+import org.dyq.httpx.config.Config;
 import org.dyq.httpx.route.RouterManager;
 import org.dyq.httpx.util.HttpMethod;
 
@@ -71,11 +71,17 @@ public class HttpX {
         return this;
     }
 
+    public static HttpX create(Config config) {
+        HttpX x = new HttpX();
+        x.svr.config(config);
+        return x;
+    }
+
     public static HttpX create() {
         return new HttpX();
     }
 
-    public HttpX server(int addr) throws Throwable {
+    public HttpX start() throws Throwable {
         RouterManager.inst().complete();
         svr.start();
         return this;

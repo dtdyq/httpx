@@ -1,6 +1,6 @@
 package org.dyq.httpx.resp;
 
-import org.dyq.httpx.xh.Context;
+import org.dyq.httpx.core.Context;
 
 /**
  * 一个response表示

@@ -1,4 +1,4 @@
-package org.dyq.httpx.xh;
+package org.dyq.httpx.core;
 
 import org.dyq.httpx.resp.Response;
 

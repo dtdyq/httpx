@@ -3,16 +3,15 @@ package org.dyq.httpx.resp;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.dyq.httpx.config.Config;
+import org.dyq.httpx.core.Context;
 import org.dyq.httpx.core.RespStatus;
-import org.dyq.httpx.util.Config;
 import org.dyq.httpx.util.HeaderNames;
 import org.dyq.httpx.util.HeaderValues;
-import org.dyq.httpx.xh.Context;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,7 +22,7 @@ import java.util.function.Consumer;
 import static org.dyq.httpx.core.Session.COLON;
 import static org.dyq.httpx.core.Session.CRLF;
 
-public abstract class DefaultResponse implements Response {
+public abstract class NoBodyResponse implements Response {
     @Setter
     @Getter
     @Accessors(fluent = true)
@@ -64,9 +63,7 @@ public abstract class DefaultResponse implements Response {
             @Override
             public void accept(byte[] bytes) {
                 int f = from[0];
-                for (int i = 0; i < bytes.length; i++) {
-                    tt[f + i] = bytes[i];
-                }
+                System.arraycopy(bytes, 0, tt, f, bytes.length);
                 from[0] += bytes.length;
             }
         });
@@ -83,17 +80,27 @@ public abstract class DefaultResponse implements Response {
         // do no
     }
 
+
     private static final byte[] CHUNKED_END_BYTES = (Integer.toHexString(0) + "\r\n\r\n").getBytes(StandardCharsets.UTF_8);
 
-    protected static void writeChunked(InputStream is, OutputStream os) throws IOException {
+    protected void writeChunked(Context ctx, InputStream is) throws IOException {
         BufferedInputStream bis = new BufferedInputStream(is);
-        byte[] tmp = new byte[Config.RESP_CHUNKED_PART_SIZE.getInt()];
+        byte[] tmp = new byte[Config.curr().buffer().getRespSize()];
         int read;
         while ((read = bis.read(tmp)) != -1) {
-            os.write((Integer.toHexString(read) + "\r\n").getBytes(StandardCharsets.UTF_8));
-            os.write(tmp, 0, read);
-            os.write(new byte[]{'\r', '\n'});
+            ctx.rawOs().write((Integer.toHexString(read) + "\r\n").getBytes(StandardCharsets.UTF_8));
+            ctx.rawOs().write(tmp, 0, read);
+            ctx.rawOs().write(new byte[]{'\r', '\n'});
         }
-        os.write(CHUNKED_END_BYTES);
+        ctx.rawOs().write(CHUNKED_END_BYTES);
     }
+
+    protected void writeBytes(Context ctx, byte[] data) throws IOException {
+        writeBytes(ctx, data, 0, data.length);
+    }
+
+    protected void writeBytes(Context ctx, byte[] data, int offset, int len) throws IOException {
+        ctx.rawOs().write(data, offset, len);
+    }
+
 }

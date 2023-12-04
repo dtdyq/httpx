@@ -3,6 +3,8 @@ package org.dyq.httpx.core;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.nio.charset.Charset;
+
 @Data
 @Accessors(fluent = true)
 public class ByteSlice {
@@ -77,7 +79,7 @@ public class ByteSlice {
 
     public byte[] copyToArray() {
         byte[] result = new byte[available()];
-        System.arraycopy(data,pos,result,0,available());
+        System.arraycopy(data, pos, result, 0, available());
         return result;
     }
 
@@ -89,9 +91,13 @@ public class ByteSlice {
     public ByteSlice duplicate() {
         ByteSlice tmp = new ByteSlice();
         byte[] b = new byte[available()];
-        System.arraycopy(data,pos,b,0,b.length);
+        System.arraycopy(data, pos, b, 0, b.length);
         tmp.data(b);
         tmp.end(b.length);
         return tmp;
+    }
+
+    public String toStr(Charset charset) {
+        return new String(data, pos, pos + available(), charset);
     }
 }

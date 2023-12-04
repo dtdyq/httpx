@@ -1,7 +1,7 @@
 package org.dyq.httpx.core;
 
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
+import org.dyq.httpx.config.Config;
 import org.dyq.httpx.core.stream.PeakInputStream;
 import org.dyq.httpx.resp.Response;
 import org.dyq.httpx.resp.impl.Except;
@@ -10,8 +10,6 @@ import org.dyq.httpx.route.RouterManager;
 import org.dyq.httpx.util.CommonUtil;
 import org.dyq.httpx.util.HeaderNames;
 import org.dyq.httpx.util.RespCacheUtil;
-import org.dyq.httpx.xh.Context;
-import org.dyq.httpx.xh.Handler;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,10 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
 
 @Slf4j
 public class Session implements Runnable {
+    private final Config config;
     private String uuid;
     private final Socket tcpSocket;
     private PeakInputStream pis;
@@ -32,9 +30,10 @@ public class Session implements Runnable {
     public static final byte[] CRLF = new byte[]{'\r', '\n'};
     public static final byte[] COLON = new byte[]{':'};
 
-    public Session(Socket client) {
+    public Session(Socket client, Config config) {
         this.uuid = CommonUtil.uuid();
         this.tcpSocket = client;
+        this.config = config;
     }
 
     @Override
@@ -51,7 +50,7 @@ public class Session implements Runnable {
                     bos.write(ee.data);
                 }
                 // 这个阶段出现错误，就直接关闭这个session吧 ,头都没读完
-                log.info( "header parse and proc error.", e);
+                log.info("header parse and proc error.", e);
                 tcpSocket.close();
                 return;
             }

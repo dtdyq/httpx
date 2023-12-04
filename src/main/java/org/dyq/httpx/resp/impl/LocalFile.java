@@ -1,28 +1,28 @@
 package org.dyq.httpx.resp.impl;
 
+import org.dyq.httpx.config.Config;
+import org.dyq.httpx.core.Context;
 import org.dyq.httpx.core.MimeMapping;
 import org.dyq.httpx.core.RespStatus;
-import org.dyq.httpx.resp.DefaultResponse;
-import org.dyq.httpx.util.Config;
+import org.dyq.httpx.resp.NoBodyResponse;
 import org.dyq.httpx.util.HeaderNames;
 import org.dyq.httpx.util.HeaderValues;
-import org.dyq.httpx.xh.Context;
 
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-public class StaticFile extends DefaultResponse {
+public class LocalFile extends NoBodyResponse {
 
     //todo 这里应该可以设置
     private InputStream is;
     private byte[] bytes;
 
 
-    public static StaticFile ok(Path path) {
+    public static LocalFile ok(Path path) {
         try {
-            StaticFile f = new StaticFile();
+            LocalFile f = new LocalFile();
             if (!Files.exists(path)) {
                 f.status = RespStatus.NOT_FOUND;
             } else {
@@ -30,7 +30,7 @@ public class StaticFile extends DefaultResponse {
                 var mmt = MimeMapping.getMimeTypeForFilename(path.getFileName().toString(), HeaderValues.APPLICATION_OCTET_STREAM);
                 f.headers.put(HeaderNames.CONTENT_TYPE, mmt);
                 long size = Files.size(path);
-                if (size > Config.RESP_CHUNKED_MIN_SIZE.getLong()) {
+                if (size > Config.curr().buffer().getRespChunkSize()) {
                     f.is = Files.newInputStream(path, StandardOpenOption.READ);
                     f.headers.put(HeaderNames.TRANSFER_ENCODING, HeaderValues.CHUNKED);
                 } else {
@@ -49,7 +49,7 @@ public class StaticFile extends DefaultResponse {
         if (bytes != null) {
             ctx.rawOs().write(bytes);
         } else {
-            writeChunked(is, ctx.rawOs());
+            writeChunked(ctx, is);
         }
     }
 

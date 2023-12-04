@@ -2,10 +2,10 @@ package org.dyq.httpx.route;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dyq.httpx.resp.Response;
-import org.dyq.httpx.resp.impl.StaticFile;
+import org.dyq.httpx.resp.impl.LocalFile;
 import org.dyq.httpx.resp.impl.Stream;
-import org.dyq.httpx.xh.Context;
-import org.dyq.httpx.xh.Handler;
+import org.dyq.httpx.core.Context;
+import org.dyq.httpx.core.Handler;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +69,7 @@ final class StaticHandler implements Handler {
             //之前在，现在可不一定在
             Path tmp = enablePathMap.get(uri);
             if (Files.exists(tmp)) {
-                return StaticFile.ok(tmp);
+                return LocalFile.ok(tmp);
             } else {
                 return context.next();
             }

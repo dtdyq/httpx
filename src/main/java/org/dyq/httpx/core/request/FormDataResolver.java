@@ -3,11 +3,11 @@ package org.dyq.httpx.core.request;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.dyq.httpx.config.Config;
 import org.dyq.httpx.core.ByteSlice;
 import org.dyq.httpx.core.ParsedHeader;
 import org.dyq.httpx.core.Session;
 import org.dyq.httpx.core.header.HeaderUtil;
-import org.dyq.httpx.util.Config;
 import org.dyq.httpx.util.HeaderNames;
 import org.dyq.httpx.util.HeaderValues;
 
@@ -43,7 +43,7 @@ public class FormDataResolver implements BoundaryConsumer {
     protected boolean isFile = false;
     protected Charset currentCharset = StandardCharsets.UTF_8;
     @Setter
-    protected int fileMemoryMaxSize = Config.MULTIPART_FILE_MEMORY_MAX_SIZE.getInt();
+    protected int fileMemoryMaxSize = Config.curr().buffer().getMultipartMemoryMax();
     @Getter
     protected final Map<String, String> formMap = new HashMap<>();
     @Getter

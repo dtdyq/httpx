@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.dyq.httpx.config.Config;
 import org.dyq.httpx.core.header.HeaderParser;
 import org.dyq.httpx.core.header.HeaderUtil;
 import org.dyq.httpx.core.request.BoundaryXFileResolveAdapter;
@@ -19,6 +20,7 @@ import org.dyq.httpx.util.HeaderNames;
 import org.dyq.httpx.util.HeaderValues;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -125,7 +127,7 @@ public class Request {
 
     private ByteSlice raw = ByteSlice.EMPTY;
 
-    public byte[] body() {
+    byte[] body() {
         if (!bodyReadFinish) {
             raw = switch ((int) size) {
                 case 0 -> ByteSlice.EMPTY;
@@ -143,6 +145,53 @@ public class Request {
             bodyReadFinish = true;
         }
         return raw.copyToArray();
+    }
+
+    String asStr() {
+        if (!bodyReadFinish) {
+            body();
+        }
+        if (raw == ByteSlice.EMPTY) {
+            return null;
+        } else {
+            ensureCharsetParsed();
+            return raw.toStr(defCharset);
+        }
+    }
+
+
+    public <T> T asJson(Type type) throws Exception {
+        if (!bodyReadFinish) {
+            body();
+        }
+        if (raw == ByteSlice.EMPTY) {
+            return null;
+        } else {
+            return Config.curr().jsonMapper().unmarshal(raw.copyToArray(), type);
+        }
+    }
+
+    private boolean charsetParsed = false;
+    private Charset defCharset = StandardCharsets.UTF_8;
+
+    private void ensureCharsetParsed() {
+        if (charsetParsed) {
+            return;
+        }
+        charsetParsed = true;
+        var ps = parseHeader(HeaderNames.CONTENT_TYPE, HeaderUtil.USE_FIRST);
+        if (ps == null) {
+            return;
+        }
+        String cc = ps.param().get(HeaderValues.CHARSET);
+        if (cc == null) {
+            return;
+        }
+        try {
+            defCharset = Charset.forName(cc);
+        } catch (IllegalArgumentException e) {
+            log.error("invalid charset for:{} {}", session.uuid(), cc, e);
+        }
     }
 
     private boolean formParsed = false;
@@ -165,8 +214,7 @@ public class Request {
             return;
         }
         ParsedHeader ps = parseHeader(HeaderNames.CONTENT_TYPE, HeaderUtil.USE_FIRST);
-        if (ps == null || (!Objects.equals(ps.value(0), HeaderValues.MULTIPART_FORM_DATA)
-                && !Objects.equals(ps.value(0), HeaderValues.APPLICATION_X_WWW_FORM_URLENCODED))) {
+        if (ps == null || (!Objects.equals(ps.value(0), HeaderValues.MULTIPART_FORM_DATA) && !Objects.equals(ps.value(0), HeaderValues.APPLICATION_X_WWW_FORM_URLENCODED))) {
             return;
         }
         Charset charset = Charset.forName(ps.param().getOrDefault(HeaderValues.CHARSET, "utf-8"));
@@ -255,7 +303,6 @@ public class Request {
                     formResolver.finish();
                     if (buffer.end() > buffer.pos() + 2) {
                         buffer.pos(buffer.pos() + 2);
-                        System.out.println("::" + Arrays.toString(buffer.copyToArray()));
                     }
                     return;
                 }

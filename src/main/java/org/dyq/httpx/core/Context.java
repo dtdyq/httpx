@@ -1,11 +1,11 @@
-package org.dyq.httpx.xh;
+package org.dyq.httpx.core;
 
-import org.dyq.httpx.core.Session;
 import org.dyq.httpx.core.request.MultipartFileResolver;
 import org.dyq.httpx.resp.Response;
 import org.dyq.httpx.route.util.CharArray;
 
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,11 +15,11 @@ public class Context {
     private int index = 0;
     private final Session session;
 
-    public Context(Session session) {
+    Context(Session session) {
         this.session = session;
     }
 
-    public void reInstallHandlers(List<Handler> handlers) {
+    void reInstallHandlers(List<Handler> handlers) {
         this.handlers.clear();
         this.handlers.addAll(handlers);
         index = 0;
@@ -82,12 +82,22 @@ public class Context {
         return session.request().formStrMap();
     }
 
+    public byte[] body() {
+        return session.request().body();
+    }
+    public String asStr() {
+        return session.request().asStr();
+    }
+
+    public <T> T json(Type type) throws Exception {
+        return session.request().asJson(type);
+    }
 
     public Throwable exception() {
         return session.exception();
     }
 
-    public void resolveFile(MultipartFileResolver resolver) throws Throwable {
+    public void resolveFiles(MultipartFileResolver resolver) throws Throwable {
         session.request().fileResolve(resolver);
     }
 }

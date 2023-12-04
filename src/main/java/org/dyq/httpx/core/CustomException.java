@@ -1,4 +1,4 @@
-package org.dyq.httpx.xh;
+package org.dyq.httpx.core;
 
 public class CustomException extends Exception{
     public CustomException(String msg) {
